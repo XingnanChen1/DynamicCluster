@@ -1,4 +1,4 @@
-# DynamicCluster
+# Dynamic Cluster
 
 implement the core Features of Dynamic Cluster with Paper2D
 
