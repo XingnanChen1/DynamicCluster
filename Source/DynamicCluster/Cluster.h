@@ -6,20 +6,42 @@
 
 #include <vector>
 #include <array>
+
 /**
- * 
+ *
  */
-class DYNAMICCLUSTER_API Cluster
+
+
+class DYNAMICCLUSTER_API FCluster
 {
-
 public:
-	Cluster();
-	std::vector<unsigned> kmeans_lloyd(TArray<FVector2D>& data, int k);
+	FCluster();
+	void Kmeans_Lloyd(TArray<FVector2D>& Data, int Level);
 
-	std::vector<unsigned> kmeans_lloyd_online(TArray<FVector2D>& data, int k);
+	void Kmeans_Lloyd_Online(TArray<FVector2D>& Data, int Level);
 
-	~Cluster();
+
+	std::vector<unsigned> GetLabels(const int Level)
+	{
+		return Labels[Level];
+	}
+
+	std::vector<std::array<float, 2>> GetMeans(const int Level)
+	{
+		return Means[Level];
+	}
+
+
+	~FCluster();
+	const std::vector<int> KofLevel = {512, 512, 256, 128, 64, 32, 16, 8};
+
+	void Reset(const int Level)
+	{
+		Means[Level].clear();
+		Labels[Level].clear();
+	}
 
 private:
-	std::vector<std::array<float, 2>> means;
+	std::vector<std::vector<unsigned>> Labels;
+	std::vector<std::vector<std::array<float, 2>>> Means;
 };

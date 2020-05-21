@@ -7,12 +7,12 @@
 #include "DynamicClusterGameModeBase.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
-class DYNAMICCLUSTER_API ADynamicClusterGameModeBase : public AGameModeBase
+class DYNAMICCLUSTER_API ADynamicClusterGameModeBase final : public AGameModeBase
 {
 	GENERATED_BODY()
 
-		ADynamicClusterGameModeBase();
+	ADynamicClusterGameModeBase();
 };

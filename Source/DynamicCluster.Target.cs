@@ -5,10 +5,10 @@ using System.Collections.Generic;
 
 public class DynamicClusterTarget : TargetRules
 {
-	public DynamicClusterTarget(TargetInfo Target) : base(Target)
-	{
-		Type = TargetType.Game;
+    public DynamicClusterTarget(TargetInfo Target) : base(Target)
+    {
+        Type = TargetType.Game;
 
-		ExtraModuleNames.AddRange( new string[] { "DynamicCluster" } );
-	}
+        ExtraModuleNames.AddRange(new string[] { "DynamicCluster" });
+    }
 }

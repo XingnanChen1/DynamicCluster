@@ -7,11 +7,13 @@
 #include "ClusterHUD.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
-class DYNAMICCLUSTER_API AClusterHUD : public AHUD
+class DYNAMICCLUSTER_API AClusterHUD final : public AHUD
 {
 	GENERATED_BODY()
-		AClusterHUD();
+	AClusterHUD();
+
+	void DrawHUD() override;
 };

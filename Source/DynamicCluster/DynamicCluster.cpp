@@ -3,4 +3,4 @@
 #include "DynamicCluster.h"
 #include "Modules/ModuleManager.h"
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, DynamicCluster, "DynamicCluster" );
+IMPLEMENT_PRIMARY_GAME_MODULE(FDefaultGameModuleImpl, DynamicCluster, "DynamicCluster")

@@ -2,31 +2,41 @@
 
 
 #include "ClusterHUD.h"
+
 #include "RandomMovingPGSpriteActor.h"
+#include "EngineUtils.h"
 
 
 AClusterHUD::AClusterHUD()
 {
 	UE_LOG(LogTemp, Warning, TEXT("load HUD"));
-	ARandomMovingPGSpriteActor* GroupSprite = Cast<ARandomMovingPGSpriteActor>(GetOwner());
+	SetActorTickEnabled(true);
+	PrimaryActorTick.bCanEverTick = true;
+}
 
-	if(GroupSprite)
+void AClusterHUD::DrawHUD()
+{
+	ARandomMovingPgSpriteActor* GroupSprite = *TActorIterator<ARandomMovingPgSpriteActor>{GetWorld()};
+
+	if (GroupSprite)
 	{
-		auto clusterBoundry = GroupSprite->getClusterBoundry();
-		for (auto boundry : clusterBoundry)
-		{
-			auto pre = boundry[0];
+		auto ClusterBoundary = GroupSprite->GetClusterBound();
 
-			for (int i = 1; i < boundry.Num(); i++)
+		if (ClusterBoundary.Num() != 0)
+
+
+			for (auto Boundary : ClusterBoundary)
 			{
-				auto cur = boundry[i];
-				DrawLine(pre.X, pre.Y, cur.X, cur.Y, FLinearColor(1, 1, 1), 5);
-				pre = cur;
+				auto Pre = Boundary[0];
+
+				for (int i = 1; i < Boundary.Vertices.Num(); i++)
+				{
+					const auto Cur = Boundary[i];
+					DrawLine(Pre.X, Pre.Y, Cur.X, Cur.Y, FLinearColor(1, 1, 1), 1);
+
+					Pre = Cur;
+				}
+				DrawLine(Pre.X, Pre.Y, Boundary[0].X, Boundary[0].Y, FLinearColor(1, 1, 1), 1);
 			}
-			DrawLine(pre.X, pre.Y, boundry[0].X, boundry[0].Y, FLinearColor(1, 1, 1), 5);
-		}
-
 	}
-
-	
 }

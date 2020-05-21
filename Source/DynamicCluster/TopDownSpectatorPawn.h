@@ -9,53 +9,50 @@
 
 enum class EZoomType : uint8
 {
-	ZoomIn ,
+	ZoomIn,
 	ZoomOut
 };
 
 /**
- * 
+ *
  */
 UCLASS()
-class DYNAMICCLUSTER_API ATopDownSpectatorPawn : public ASpectatorPawn
+class DYNAMICCLUSTER_API ATopDownSpectatorPawn final : public ASpectatorPawn
 {
 	GENERATED_BODY()
 
 public:
-	ATopDownSpectatorPawn(const FObjectInitializer& ObjectInitializer);
+	explicit ATopDownSpectatorPawn(const FObjectInitializer& ObjectInitializer);
 
 	/** Camera Component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
-		class UCameraComponent* CameraComponent;
+	class UCameraComponent* CameraComponent;
 
 	/** Camera Zoom Speed */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
-		float CameraZoomSpeed;
+	float CameraZoomSpeed;
 
 	/** Camera Movement Speed */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
-		float CameraMovementSpeed;
+	float CameraMovementSpeed;
 
 	/** Camera Scroll Boundary */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
-		float CameraScrollBoundary;
+	float CameraScrollBoundary;
 
 	/** Should the camera move? */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
-		bool bCanMoveCamera;
+	bool bCanMoveCamera;
 
 private:
-	/** Sets up player inputs
-	 *    @param InputComponent - Input Component
-	 */
-	void SetupPlayerInputComponent(class UInputComponent* inputComponent);
+	void SetupPlayerInputComponent(class UInputComponent* I_InputComponent) override;
 
 
 public:
 	/** Zooms The Camera */
-	template<EZoomType T>
+	template <EZoomType T>
 	UFUNCTION()
-		void Zoom();
+	void Zoom();
 
-
+	float GetCameraHeight() const;
 };

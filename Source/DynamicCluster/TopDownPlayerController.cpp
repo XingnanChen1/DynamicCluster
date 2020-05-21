@@ -3,6 +3,7 @@
 
 #include "TopDownPlayerController.h"
 
-ATopDownPlayerController::ATopDownPlayerController() {
+ATopDownPlayerController::ATopDownPlayerController()
+{
 	bShowMouseCursor = true;
 }

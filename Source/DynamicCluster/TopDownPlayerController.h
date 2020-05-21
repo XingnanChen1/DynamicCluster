@@ -7,12 +7,12 @@
 #include "TopDownPlayerController.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
-class DYNAMICCLUSTER_API ATopDownPlayerController : public APlayerController
+class DYNAMICCLUSTER_API ATopDownPlayerController final : public APlayerController
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
-        ATopDownPlayerController();
+	ATopDownPlayerController();
 };

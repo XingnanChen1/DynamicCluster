@@ -5,10 +5,10 @@ using System.Collections.Generic;
 
 public class DynamicClusterEditorTarget : TargetRules
 {
-	public DynamicClusterEditorTarget(TargetInfo Target) : base(Target)
-	{
-		Type = TargetType.Editor;
+    public DynamicClusterEditorTarget(TargetInfo Target) : base(Target)
+    {
+        Type = TargetType.Editor;
 
-		ExtraModuleNames.AddRange( new string[] { "DynamicCluster" } );
-	}
+        ExtraModuleNames.AddRange(new string[] { "DynamicCluster" });
+    }
 }

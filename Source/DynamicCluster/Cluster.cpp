@@ -5,38 +5,37 @@
 
 #include "dkm/dkm.hpp"
 
-Cluster::Cluster()
+FCluster::FCluster()
 {
-
+	Means = std::vector<std::vector<std::array<float, 2>>>(KofLevel.size());
+	Labels = std::vector<std::vector<unsigned>>(KofLevel.size());
 }
 
-Cluster::~Cluster()
+FCluster::~FCluster()
 {
 }
 
-std::vector<unsigned> Cluster::kmeans_lloyd(TArray<FVector2D>& data, int k)
+void FCluster::Kmeans_Lloyd(TArray<FVector2D>& Data, const int Level)
 {
-	std::vector < std::array<float, 2>> i_data(data.Num());
+	std::vector<std::array<float, 2>> I_Data(Data.Num());
 
-	for(int i = 0; i<data.Num();i++)
+	for (int i = 0; i < Data.Num(); i++)
 	{
-		std::array<float, 2> tmp = { data[i][0],data[i][1] };
-		i_data[i] = tmp;
+		const std::array<float, 2> Tmp = {Data[i][0], Data[i][1]};
+		I_Data[i] = Tmp;
 	}
-	auto ret = dkm::kmeans_lloyd(i_data, dkm::clustering_parameters<float>(k));
-	means = std::get<0>(ret);
-	return  std::get<1>(ret);
+	auto Ret = Dkm::Kmeans_Lloyd(I_Data, Dkm::TClustering_Parameters<float>(KofLevel[Level]));
+	Means[Level] = std::get<0>(Ret);
+	Labels[Level] = std::get<1>(Ret);
 }
 
-std::vector<unsigned> Cluster::kmeans_lloyd_online(TArray<FVector2D>& data, int k)
+void FCluster::Kmeans_Lloyd_Online(TArray<FVector2D>& Data, const int Level)
 {
-	std::vector < std::array<float, 2>> i_data(data.Num());
+	std::vector<std::array<float, 2>> I_Data(Data.Num());
 
-	for (int i = 0; i < data.Num(); i++)
+	for (int i = 0; i < Data.Num(); i++)
 	{
-		std::array<float, 2> tmp = { data[i][0],data[i][1] };
-		i_data[i] = tmp;
+		I_Data[i] = {Data[i][0], Data[i][1]};
 	}
-	return  dkm::kmeans_lloyd_online(i_data, dkm::clustering_parameters<float>(k), means);
+	Labels[Level] = Dkm::Kmeans_Lloyd_Online(I_Data, Dkm::TClustering_Parameters<float>(KofLevel[Level]), Means[Level]);
 }
-

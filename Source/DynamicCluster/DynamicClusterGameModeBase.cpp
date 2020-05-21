@@ -7,7 +7,8 @@
 #include "TopDownPlayerController.h"
 #include "TopDownSpectatorPawn.h"
 
-ADynamicClusterGameModeBase :: ADynamicClusterGameModeBase() {
+ADynamicClusterGameModeBase::ADynamicClusterGameModeBase()
+{
 	PlayerControllerClass = ATopDownPlayerController::StaticClass();
 	DefaultPawnClass = ATopDownSpectatorPawn::StaticClass();
 	HUDClass = AClusterHUD::StaticClass();
