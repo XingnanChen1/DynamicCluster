@@ -4,7 +4,9 @@ implement the core Features of Dynamic Cluster with Paper2D
 
 including Filter, Cluster and OverLay.
 
-TODOLIST:
+
+
+#TODOLIST:
 
 Run Cluster in each sub type.
 
