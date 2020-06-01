@@ -15,7 +15,7 @@ public:
 	Unit() :
 		Velocity(FVector2D::ZeroVector),
 		Position(FVector2D::ZeroVector),
-		UnitRelation(EUnitRelation::Friendly),
+		UnitRelation(EUnitRelation::Enemy),
 		UnitType(EUnitType::Ground)
 	{
 		//meaningless init

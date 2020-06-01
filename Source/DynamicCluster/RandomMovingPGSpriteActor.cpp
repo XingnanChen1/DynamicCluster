@@ -51,50 +51,72 @@ void ARandomMovingPgSpriteActor::InitObjects()
 	const float Max_Pos = 240000;
 	const float Min_Speed = -30;
 	const float Max_Speed = 30;
-
-	const float Eps = 1e-3;
-
-	//TSet<int> EmptySet;
-
-	UnitTypeSetsIndex.Init({}, static_cast<int>(EUnitType::Count));
-	UnitRelationSetsIndex.Init({}, static_cast<int>(EUnitRelation::Count));
 	FilterStateChanged = false;
-	
-	Units.Init(Unit(), NumOfObjects);
-	for (int i = 0; i < NumOfObjects; i++)
-	{
-		auto CurUnitRelation = static_cast<EUnitRelation>(FMath::FloorToInt(FMath::FRandRange(0, static_cast<float>(EUnitRelation::Count) - Eps)));
-		auto CurUnitType = static_cast<EUnitType>(FMath::FloorToInt(FMath::FRandRange(0, static_cast<float>(EUnitType::Count) - Eps)));
-		
-		Units[i] = Unit(
-			FVector2D(FMath::FRandRange(Min_Speed, Max_Speed), FMath::FRandRange(Min_Speed, Max_Speed)), 
-			FVector2D(FMath::FRandRange(Min_Pos, Max_Pos), FMath::FRandRange(Min_Pos, Max_Pos)),
-			CurUnitRelation,
-			CurUnitType);
 
-		
-		
-		UnitTypeSetsIndex[static_cast<int>(CurUnitType)].Add(i);
-		UnitRelationSetsIndex[static_cast<int>(CurUnitRelation)].Add(i);
+	for (int i = 0; i < static_cast<int>(EUnitType::Count); i++)
+	{
+		auto CurUnitType = static_cast<EUnitType>(i);
+		TMap<EUnitRelation, FTypeInfo> cur;
+		for (int j = 0; j < static_cast<int>(EUnitRelation::Count); j++)
+		{
+			auto CurUnitRelation = static_cast<EUnitRelation>(j);
+
+			TArray<Unit> Units;
+			
+			Units.Init(Unit(), 2500);
+			for (int k = 0; k < 2500; k++)
+			{
+				Units[k] = Unit(
+					FVector2D(FMath::FRandRange(Min_Speed, Max_Speed), FMath::FRandRange(Min_Speed, Max_Speed)),
+					FVector2D(FMath::FRandRange(Min_Pos, Max_Pos), FMath::FRandRange(Min_Pos, Max_Pos)),
+					CurUnitRelation,
+					CurUnitType);
+			}
+			
+			cur.Add(TPair<EUnitRelation,FTypeInfo>{CurUnitRelation,FTypeInfo(Sprite,2500,Units,{},FCluster())});
+		}
+		Data.Add(CurUnitType, cur);
+
 
 	}
 }
 
 void ARandomMovingPgSpriteActor::AddObjects()
 {
-	for (int i = 0; i < FilteredIndex.Num(); i++)
+	for (auto curType : FilterUnitType)
 	{
-		GetRenderComponent()->AddInstance(
-			FTransform(FRotator(0, 0, -90),
-			           FVector(Units[FilteredIndex[i]].Position, 0),
-			           FVector(10)), Sprite);
+		for (auto curRelation : FilterRelations)
+		{
+			auto curTypeInfo = Data[curType][curRelation];
+
+			for (auto& unit : curTypeInfo.Units)
+			{
+				GetRenderComponent()->AddInstance(
+					FTransform(FRotator(0, 0, -90),
+						FVector(unit.Position, 0),
+						FVector(10)), curTypeInfo.Sprite);
+			}
+
+		}
 	}
 }
 
 void ARandomMovingPgSpriteActor::MoveObjects()
 {
-	for (int i = 0; i < NumOfObjects; i++)
-		Units[i].Position += Units[i].Velocity;
+
+	for (auto& curType : Data)
+	{
+		for (auto& curRelation : curType.Get<1>())
+		{
+			auto& curTypeInfo = curRelation.Get<1>();
+
+			for (auto& unit : curTypeInfo.Units)
+			{
+				unit.Position += unit.Velocity;
+			}
+
+		}
+	}
 }
 
 void ARandomMovingPgSpriteActor::RenderObjects()
@@ -104,20 +126,32 @@ void ARandomMovingPgSpriteActor::RenderObjects()
 
 	if (CurLevel == PreLevel)
 	{
-		for (int i = 0; i < FilteredIndex.Num(); i++)
+		int count = 0;
+		for (auto curType : FilterUnitType)
 		{
-			GetRenderComponent()->UpdateInstanceTransform(i,
-			                                              FTransform(FRotator(0, 0, -90),
-			                                                         FVector(Units[FilteredIndex[i]].Position, 0),
-			                                                         FVector(10)),
-			                                              false,
-			                                              true);
+			for (auto curRelation : FilterRelations)
+			{
+				auto curTypeInfo = Data[curType][curRelation];
+				for (auto& unit : curTypeInfo.Units)
+				{
+					GetRenderComponent()->UpdateInstanceTransform(count,
+						FTransform(FRotator(0, 0, -90),
+							FVector(unit.Position, 0),
+							FVector(10)),
+						false,
+						true);
+					count++;
+				}
+			}
 		}
+		
 	}
 	else
 	{
-		ClusterBound.Empty();
 		Render_Component->ClearInstances();
+
+		ClearBound();
+		
 		AddObjects();
 	}
 }
@@ -125,104 +159,127 @@ void ARandomMovingPgSpriteActor::RenderObjects()
 
 void ARandomMovingPgSpriteActor::InitFilter()
 {
-	for(int i =0; i<NumOfObjects;i++)
+	for(int i = 0; i< static_cast<int>(EUnitType::Count);i++)
 	{
-		FilteredIndex.Add(i);
+		FilterUnitType.Add(static_cast<EUnitType>(i));
 	}
+	for (int i = 0; i < static_cast<int>(EUnitRelation::Count); i++)
+	{
+		FilterRelations.Add(static_cast<EUnitRelation>(i));
+	}
+
 }
 
 void ARandomMovingPgSpriteActor::InitClusters()
 {
-	TArray<FVector2D> Positions;
-
-	//for (const auto& Unit : Units)
-	//{
-	//	Positions.Add(Unit.Position);
-	//}
-
-	for (int i = 0; i < FilteredIndex.Num(); i++)
+	for(auto& curType : FilterUnitType)
 	{
-		Positions.Add(Units[FilteredIndex[i]].Position);
+		for (auto& curRelation : FilterRelations)
+		{
+			auto& curTypeInfo = Data[curType][curRelation];
+			auto& curCluster = curTypeInfo.Cluster;
+
+			TArray<FVector2D> Positions;
+
+			for (int i = 0; i < curTypeInfo.NumOfObjects; i++)
+			{
+				Positions.Add(curTypeInfo.Units[i].Position);
+			}
+			
+			for (int i = 0; i < curCluster.KofLevel.size(); i++)
+			{
+				if (curTypeInfo.NumOfObjects / 2 > curCluster.KofLevel[i])
+					curCluster.Kmeans_Lloyd(Positions, i);
+			}
+		}
 	}
-
-
 	
-	for (int i = 0; i < Cluster.KofLevel.size(); i++)
-	{
-		if (FilteredIndex.Num() / 3 > Cluster.KofLevel[i])
-			Cluster.Kmeans_Lloyd(Positions, i);
-		else
-			Cluster.Reset(i);
-	}
 }
 
 
 void ARandomMovingPgSpriteActor::AddClusters()
 {
-	auto Labels = Cluster.GetLabels(GetZoomLevel());
 
-	TSortedMap<unsigned, TArray<FVector2D>> Clusters;
-
-
-	for (int i = 0; i < Labels.size(); i++)
+	for (auto& curType : FilterUnitType)
 	{
-		if (Clusters.Find(Labels[i]))
+		for (auto& curRelation : FilterRelations)
 		{
-			Clusters[Labels[i]].Add(Units[FilteredIndex[i]].Position);
+			auto& curTypeInfo = Data[curType][curRelation];
+			auto Labels = curTypeInfo.Cluster.GetLabels(GetZoomLevel());
+
+			TSortedMap<unsigned, TArray<FVector2D>> Clusters;
+
+			for (int i = 0; i < Labels.size(); i++)
+			{
+				if (Clusters.Find(Labels[i]))
+				{
+					Clusters[Labels[i]].Add(curTypeInfo.Units[i].Position);
+				}
+				else
+					Clusters.Add(Labels[i], {});
+			}
+
+			for (auto Label_Instances : Clusters)
+			{
+				const auto Label = Label_Instances.Get<0>();
+				auto CurInstances = Label_Instances.Get<1>();
+
+
+				auto Cur_Mean = curTypeInfo.Cluster.GetMeans(GetZoomLevel())[Label];
+
+
+				if (PointInScreen(Cur_Mean[0], Cur_Mean[1]))
+				{
+					CalcClusterBound(CurInstances, curTypeInfo.ClusterBound);
+				}
+
+				GetRenderComponent()->AddInstance(
+					FTransform(
+						FRotator(0, 0, -90),
+						FVector(Cur_Mean[0], Cur_Mean[1], 0),
+						FVector(10)),
+					curTypeInfo.Sprite, false, Colors[Label * 512 / curTypeInfo.Cluster.KofLevel[GetZoomLevel()]]); 
+			}
 		}
-		else
-			Clusters.Add(Labels[i], {});
 	}
 
-	for (auto Label_Instances : Clusters)
-	{
-		const auto Label = Label_Instances.Get<0>();
-		auto CurInstances = Label_Instances.Get<1>();
-
-
-		auto Cur_Mean = Cluster.GetMeans(GetZoomLevel())[Label];
-
-
-		if (PointInScreen(Cur_Mean[0], Cur_Mean[1]))
-		{
-			CalcClusterBound(CurInstances);
-		}
-
-		GetRenderComponent()->AddInstance(
-			FTransform(
-				FRotator(0, 0, -90),
-				FVector(Cur_Mean[0], Cur_Mean[1], 0),
-				FVector(10)),
-			Sprite, false, Colors[Label * 512 / Cluster.KofLevel[GetZoomLevel()]]);
-	}
 }
 
 void ARandomMovingPgSpriteActor::UpdateClusters()
 {
-	TArray<FVector2D> Positions;
-
-	for (int i = 0; i < FilteredIndex.Num(); i++)
+	for (auto& curType : FilterUnitType)
 	{
-		Positions.Add(Units[FilteredIndex[i]].Position);
+		for (auto& curRelation : FilterRelations)
+		{
+			auto& curTypeInfo = Data[curType][curRelation];
+			auto& curCluster = curTypeInfo.Cluster;
 
+			TArray<FVector2D> Positions;
+
+			for (int i = 0; i < curTypeInfo.NumOfObjects; i++)
+			{
+				Positions.Add(curTypeInfo.Units[i].Position);
+			}
+
+			for (int i = 0; i < curCluster.KofLevel.size(); i++)
+			{
+				if (curTypeInfo.NumOfObjects / 2 > curCluster.KofLevel[i])
+					curCluster.Kmeans_Lloyd_Online(Positions, i);
+			}
+		}
 	}
-	
-	//for(const auto& Unit: Units)
-	//{
-	//	Positions.Add(Unit.Position);
-	//}
-
-	Cluster.Kmeans_Lloyd_Online(Positions, GetZoomLevel());
 }
 
-void ARandomMovingPgSpriteActor::GetCurCluster(std::vector<unsigned>& Labels,
-                                               TSortedMap<unsigned, TArray<FVector2D>>& Clusters)
+void ARandomMovingPgSpriteActor::GetCurCluster(
+	std::vector<unsigned>& Labels,
+	TSortedMap<unsigned, TArray<FVector2D>>& Clusters,
+	TArray<Unit>& Units)
 {
 	for (int i = 0; i < Labels.size(); i++)
 	{
 		if (Clusters.Find(Labels[i]))
 		{
-			Clusters[Labels[i]].Add(Units[FilteredIndex[i]].Position);
+			Clusters[Labels[i]].Add(Units[i].Position);
 		}
 		else
 			Clusters.Add(Labels[i], {});
@@ -260,49 +317,63 @@ void ARandomMovingPgSpriteActor::RenderClusters()
 {
 	const auto CurLevel = GetZoomLevel();
 	auto Render_Component = GetRenderComponent();
-	auto Labels = Cluster.GetLabels(CurLevel);
-	ClusterBound.Empty();
 
-	TSortedMap<unsigned, TArray<FVector2D>> Clusters;
-	GetCurCluster(Labels, Clusters);
+	ClearBound();
 
 	if (CurLevel != PreLevel)
 		Render_Component->ClearInstances();
 
-
-	for (const auto& Label_Instances : Clusters)
+	int count = 0;
+	for (auto& curType : FilterUnitType)
 	{
-		const auto Label = Label_Instances.Get<0>();
-		auto CurInstances = Label_Instances.Get<1>();
-		auto Cur_Mean = Cluster.GetMeans(CurLevel)[Label];
+		for (auto& curRelation : FilterRelations)
+		{
+			auto& curTypeInfo = Data[curType][curRelation];
+			auto& curCluster = curTypeInfo.Cluster;
+			auto Labels = curCluster.GetLabels(CurLevel);
+
+			TSortedMap<unsigned, TArray<FVector2D>> Clusters;
+			GetCurCluster(Labels, Clusters, curTypeInfo.Units);
+
+			for (const auto& Label_Instances : Clusters)
+			{
+				const auto Label = Label_Instances.Get<0>();
+				auto CurInstances = Label_Instances.Get<1>();
+				auto Cur_Mean = curCluster.GetMeans(CurLevel)[Label];
 
 
-		if (PointInScreen(Cur_Mean[0], Cur_Mean[1]))
-		{
-			CalcClusterBound(CurInstances);
-		}
-		if (CurLevel != PreLevel)
-		{
-			Render_Component->AddInstance(
-				FTransform(
-					FRotator(0, 0, -90),
-					FVector(Cur_Mean[0], Cur_Mean[1], 0),
-					FVector(10)),
-				Sprite, false, Colors[Label * 512 / Cluster.KofLevel[CurLevel]]);
-		}
-		else
-		{
-			Render_Component->UpdateInstanceTransform(Label,
-			                                          FTransform(
-				                                          FRotator(0, 0, -90),
-				                                          FVector(Cur_Mean[0], Cur_Mean[1], 0),
-				                                          FVector(10)),
-			                                          false, true);
+				if (PointInScreen(Cur_Mean[0], Cur_Mean[1]))
+				{
+					CalcClusterBound(CurInstances,curTypeInfo.ClusterBound);
+				}
+				if (CurLevel != PreLevel)
+				{
+					Render_Component->AddInstance(
+						FTransform(
+							FRotator(0, 0, -90),
+							FVector(Cur_Mean[0], Cur_Mean[1], 0),
+							FVector(10)),
+						Sprite, false, Colors[Label * 512 / curCluster.KofLevel[CurLevel]]);
+				}
+				else
+				{
+					Render_Component->UpdateInstanceTransform(count,
+						FTransform(
+							FRotator(0, 0, -90),
+							FVector(Cur_Mean[0], Cur_Mean[1], 0),
+							FVector(10)),
+						false, true);
+					count++;
+				}
+			}
 		}
 	}
+	
+	
+
 }
 
-void ARandomMovingPgSpriteActor::CalcClusterBound(TArray<FVector2D>& CurInstances)
+void ARandomMovingPgSpriteActor::CalcClusterBound(TArray<FVector2D>& CurInstances ,TArray<FConvexHull>& bound)
 {
 	const APlayerController* PlayerController = *TActorIterator<ATopDownPlayerController>(GetWorld());
 
@@ -318,7 +389,7 @@ void ARandomMovingPgSpriteActor::CalcClusterBound(TArray<FVector2D>& CurInstance
 		Vertexes.Add(Cur_Loc);
 	}
 	if(Vertexes.Num() > 0)
-		ClusterBound.Add(Vertexes);
+		bound.Add(Vertexes);
 }
 
 void ARandomMovingPgSpriteActor::BeginPlay()
@@ -337,6 +408,22 @@ void ARandomMovingPgSpriteActor::BeginPlay()
 		AddClusters();
 }
 
+void ARandomMovingPgSpriteActor::ClearBound()
+{
+	for (auto& curType : Data)
+	{
+		for (auto& curRelation : curType.Get<1>())
+		{
+			auto& curTypeInfo = curRelation.Get<1>();
+
+			curTypeInfo.ClusterBound.Empty();
+
+		}
+	}
+}
+
+
+
 void ARandomMovingPgSpriteActor::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -352,8 +439,9 @@ void ARandomMovingPgSpriteActor::Tick(const float DeltaTime)
 		InitClusters();
 
 		GetRenderComponent()->ClearInstances();
-		ClusterBound.Empty();
-		if (CurLevel == 0 || FilteredIndex.Num() / 3 <= Cluster.KofLevel[CurLevel])
+		ClearBound();
+		
+		if (CurLevel == 0 || FilterUnitType.Num() * FilterRelations.Num() *2500 / 3 <= FCluster::KofLevel[CurLevel])
 			AddObjects();
 		else
 			AddClusters();
@@ -361,7 +449,7 @@ void ARandomMovingPgSpriteActor::Tick(const float DeltaTime)
 		FilterStateChanged = false;
 	}else
 	{
-		if (CurLevel == 0 || FilteredIndex.Num() / 3 <= Cluster.KofLevel[CurLevel])
+		if (CurLevel == 0 || FilterUnitType.Num() * FilterRelations.Num() * 2500 / 3 <= FCluster::KofLevel[CurLevel])
 			RenderObjects();
 		else
 		{
@@ -385,66 +473,40 @@ int ARandomMovingPgSpriteActor::GetZoomLevel() const
 void ARandomMovingPgSpriteActor::Filter(TArray<bool> I_FilterRelation, TArray<bool> I_FilterUnitType)
 {
 
-	TArray<EUnitRelation> FilterRelations;
+	TSet<EUnitRelation> TS_FilterRelations;
 	for (int i = 0; i < I_FilterRelation.Num(); i++)
 	{
 		if (I_FilterRelation[i])
-			FilterRelations.Add(static_cast<EUnitRelation>(i));
+			TS_FilterRelations.Add(static_cast<EUnitRelation>(i));
 	}
 
-	TSet<int> FilteredByRelationIndex;
-	for (int i = 0; i < FilterRelations.Num(); i++)
-	{
-		if (i == 0)
-			FilteredByRelationIndex = UnitRelationSetsIndex[i];
-		else
-			FilteredByRelationIndex = FilteredByRelationIndex.Union(UnitRelationSetsIndex[i]);
-	}
-
-
-	TArray<EUnitType> FilterUnitType;
+	TSet<EUnitType> TS_FilterUnitType;
 
 	for (int i = 0; i < I_FilterUnitType.Num(); i++)
 	{
 		if (I_FilterUnitType[i])
-			FilterUnitType.Add(static_cast<EUnitType>(i));
-	}
-
-	TSet<int> FilteredByUnitTypeIndex;
-	for (int i = 0; i < FilterUnitType.Num(); i++)
-	{
-		if (i == 0)
-			FilteredByUnitTypeIndex = UnitTypeSetsIndex[i];
-		else
-			FilteredByUnitTypeIndex = FilteredByUnitTypeIndex.Union(UnitTypeSetsIndex[i]);
-	}
-
-
-	auto tmpSet = FilteredByUnitTypeIndex.Intersect(FilteredByRelationIndex);
-	TArray<int> tmp;
-	for (auto It = tmpSet.CreateConstIterator(); It; ++It)
-	{
-		tmp.Add(*It);
+			TS_FilterUnitType.Add(static_cast<EUnitType>(i));
 	}
 
 	// !!!
 	//thread safety issue, need lock
 	//if actor is thread safe, then this shouldn't be a problem
-	FilteredIndex = tmp;
+	FilterUnitType = TS_FilterUnitType;
+	FilterRelations = TS_FilterRelations;
 
 
 	FilterStateChanged = true;
 }
 
-TMap<EUnitType,TMap<EUnitRelation,TArray<Unit>>> ARandomMovingPgSpriteActor::GetSetsFromFilteredUnits()
-{
-	TMap<EUnitType, TMap<EUnitRelation, TArray<Unit>>> Ret;
-
-	for (int i = 0; i< FilteredIndex.Num(); i++)
-	{
-		auto CurUnit = Units[FilteredIndex[i]];
-		Ret[CurUnit.UnitType][CurUnit.UnitRelation].Add(CurUnit);
-	}
-
-	return Ret;
-}
+//TMap<EUnitType,TMap<EUnitRelation,TArray<Unit>>> ARandomMovingPgSpriteActor::GetSetsFromFilteredUnits()
+//{
+//	TMap<EUnitType, TMap<EUnitRelation, TArray<Unit>>> Ret;
+//
+//	for (int i = 0; i< FilteredIndex.Num(); i++)
+//	{
+//		auto CurUnit = Units[FilteredIndex[i]];
+//		Ret[CurUnit.UnitType][CurUnit.UnitRelation].Add(CurUnit);
+//	}
+//
+//	return Ret;
+//}

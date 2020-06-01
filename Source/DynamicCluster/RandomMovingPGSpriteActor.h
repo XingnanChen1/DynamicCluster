@@ -44,13 +44,24 @@ private:
 // TODO
 struct FTypeInfo
 {
-
 	UPaperSprite* Sprite;
 	size_t NumOfObjects;
 	TArray<Unit> Units;
 	TArray<FConvexHull> ClusterBound;
 	FCluster Cluster;
 
+	FTypeInfo(UPaperSprite* I_Sprite,
+		size_t I_NumOfObjects,
+		TArray<Unit> I_Units,
+		TArray<FConvexHull> I_ClusterBound,
+		FCluster I_Cluster) :
+		Sprite(I_Sprite),
+		NumOfObjects(I_NumOfObjects),
+		Units(I_Units),
+		ClusterBound(I_ClusterBound),
+		Cluster(I_Cluster)
+	{
+	}
 };
 
 /**
@@ -70,7 +81,16 @@ public:
 	//For Hud to draw cluster
 	TArray<FConvexHull> GetClusterBound() const
 	{
-		return ClusterBound;
+		TArray<FConvexHull> ret;
+		for (auto curType : FilterUnitType)
+		{
+			for (auto curRelation : FilterRelations)
+			{
+				auto curTypeInfo = Data[curType][curRelation];
+				ret.Append(curTypeInfo.ClusterBound);
+			}
+		}
+		return ret;
 	}
 
 	UFUNCTION(BlueprintCallable)
@@ -85,7 +105,7 @@ private:
 
 	//objects properties
 	size_t NumOfObjects;
-	TArray<Unit> Units;
+	//TArray<Unit> Units;
 
 	void InitObjects();
 	void AddObjects();
@@ -95,16 +115,14 @@ private:
 
 	//cluster
 	TMap<unsigned, FLinearColor> Colors;
-	TArray<FConvexHull> ClusterBound;
-	FCluster Cluster;
 
 	void InitColors();
 	void InitClusters();
 	void AddClusters();
 	void UpdateClusters();
 	void RenderClusters();
-	void CalcClusterBound(TArray<FVector2D>& CurInstances);
-	void GetCurCluster(std::vector<unsigned>& Labels, TSortedMap<unsigned, TArray<FVector2D>>& Clusters);
+	void CalcClusterBound(TArray<FVector2D>& CurInstances, TArray<FConvexHull>& bound);
+	void GetCurCluster(std::vector<unsigned>& Labels, TSortedMap<unsigned, TArray<FVector2D>>& Clusters, TArray<Unit>& Units);
 	bool PointInScreen(float X, float Y) const;
 
 
@@ -117,17 +135,18 @@ private:
 	//TArray<bool> FilterRelation;
 	//TArray<bool> FilterUnitType;
 
-	//array of index
-	TArray<int> FilteredIndex;
 
 	//set of index
-	TArray<TSet<int>> UnitRelationSetsIndex;
-	TArray<TSet<int>> UnitTypeSetsIndex;
+	//TArray<TSet<int>> UnitRelationSetsIndex;
+	//TArray<TSet<int>> UnitTypeSetsIndex;
 
 	bool FilterStateChanged;
 	void InitFilter();
 
 	// TODO
-	TMap<EUnitType, TMap<EUnitRelation, TArray<Unit>>> GetSetsFromFilteredUnits();
-
+	TMap<EUnitType, TMap<EUnitRelation, FTypeInfo>> Data;
+	//TMap<EUnitType, TMap<EUnitRelation, FTypeInfo>> GetSetsFromFilteredUnits();
+	TSet<EUnitRelation> FilterRelations;
+	TSet<EUnitType> FilterUnitType;
+	void ClearBound();
 };

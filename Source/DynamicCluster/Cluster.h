@@ -33,7 +33,7 @@ public:
 
 
 	~FCluster();
-	const std::vector<int> KofLevel = {512, 512, 256, 128, 64, 32, 16, 8};
+	static const std::vector<int> KofLevel;
 
 	void Reset(const int Level)
 	{

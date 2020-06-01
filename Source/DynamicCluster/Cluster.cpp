@@ -5,6 +5,9 @@
 
 #include "dkm/dkm.hpp"
 
+const std::vector<int> FCluster::KofLevel = { 128, 128, 64, 64, 32, 32, 16, 8 };
+
+
 FCluster::FCluster()
 {
 	Means = std::vector<std::vector<std::array<float, 2>>>(KofLevel.size());
